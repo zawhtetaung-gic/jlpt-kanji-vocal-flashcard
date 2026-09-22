@@ -11,6 +11,10 @@ export const updateWord = (id, data) =>
 export const deleteWord = (id) =>
   axios.delete(`${API}/words/${id}`).then((r) => r.data);
 
+export const exportWords = () => axios.get(`${API}/words/export`).then((r) => r.data);
+export const importWords = (words) =>
+  axios.post(`${API}/words/import`, { words }).then((r) => r.data);
+
 export const getFlashcards = (random) =>
   axios
     .get(`${API}/flashcards`, { params: { random: random ? "true" : "false" } })
@@ -30,6 +34,10 @@ export const createVocab2 = (data) =>
   axios.post(`${API}/vocab2`, data).then((r) => r.data);
 export const deleteVocab2 = (id) =>
   axios.delete(`${API}/vocab2/${id}`).then((r) => r.data);
+
+export const exportVocab2 = () => axios.get(`${API}/vocab2/export`).then((r) => r.data);
+export const importVocab2 = (vocab) =>
+  axios.post(`${API}/vocab2/import`, { vocab }).then((r) => r.data);
 
 export const getVocab2Flashcards = (random, dir) =>
   axios

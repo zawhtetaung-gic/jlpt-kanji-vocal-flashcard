@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { getWords, deleteWord } from "../api";
+import { getWords, deleteWord, exportWords, importWords } from "../api";
+import ImportExport from "./ImportExport";
 
 const PAGE_SIZE = 5;
 
@@ -41,9 +42,26 @@ export default function WordList({ refreshKey, onEdit }) {
 
   const startNum = (page - 1) * PAGE_SIZE;
 
+  const reload = () => {
+    setPage(1);
+    getWords(1, PAGE_SIZE).then(setData).catch(() => {});
+  };
+
   return (
     <div className="card">
       <h2>Word List ({data.total})</h2>
+      <ImportExport
+        label="Kanji words"
+        filename="jlpt-kanji-words.json"
+        onExport={exportWords}
+        onImport={async (parsed) => {
+          const words = Array.isArray(parsed) ? parsed : parsed.words;
+          if (!Array.isArray(words)) throw new Error("Invalid file: expected a words array");
+          const r = await importWords(words);
+          return `Added ${r.wordsAdded} word(s), updated ${r.wordsUpdated}; added ${r.subsAdded} sub-word(s), updated ${r.subsUpdated}.`;
+        }}
+        onImported={reload}
+      />
       {loading && <p>Loading...</p>}
       {!loading && data.words.length === 0 && (
         <p>No words yet. Add some above.</p>

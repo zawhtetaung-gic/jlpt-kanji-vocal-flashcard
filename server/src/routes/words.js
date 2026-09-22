@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { randomUUID } = require('crypto');
 const pool = require('../db');
 
 // GET words with their sub-words (paginated)
@@ -31,6 +32,77 @@ router.get('/words', async (req, res) => {
   }
 });
 
+// GET full export of all words + sub-words (no pagination), for backup/sync
+router.get('/words/export', async (req, res) => {
+  try {
+    const [words] = await pool.query('SELECT * FROM words ORDER BY id ASC');
+    for (const w of words) {
+      const [subs] = await pool.query('SELECT * FROM sub_words WHERE word_id = ? ORDER BY id ASC', [w.id]);
+      w.subs = subs;
+    }
+    res.json({ exportedAt: new Date().toISOString(), words });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// IMPORT words + sub-words, merging by uuid so syncing between machines
+// never creates duplicates and never deletes anything already present.
+// body: { words: [{ uuid, main_word, subs: [{ uuid, kanji, hiragana, english }, ...] }, ...] }
+router.post('/words/import', async (req, res) => {
+  const { words } = req.body;
+  if (!Array.isArray(words)) {
+    return res.status(400).json({ error: 'words must be an array' });
+  }
+  const conn = await pool.getConnection();
+  let wordsAdded = 0, wordsUpdated = 0, subsAdded = 0, subsUpdated = 0;
+  try {
+    await conn.beginTransaction();
+    for (const w of words) {
+      if (!w.main_word || !Array.isArray(w.subs)) continue;
+      const wordUuid = w.uuid || randomUUID();
+
+      const [existing] = await conn.query('SELECT id FROM words WHERE uuid = ?', [wordUuid]);
+      let wordId;
+      if (existing.length > 0) {
+        wordId = existing[0].id;
+        await conn.query('UPDATE words SET main_word = ? WHERE id = ?', [w.main_word, wordId]);
+        wordsUpdated++;
+      } else {
+        const [result] = await conn.query('INSERT INTO words (uuid, main_word) VALUES (?, ?)', [wordUuid, w.main_word]);
+        wordId = result.insertId;
+        wordsAdded++;
+      }
+
+      for (const s of w.subs) {
+        if (!s.kanji || !s.hiragana || !s.english) continue;
+        const subUuid = s.uuid || randomUUID();
+        const [existingSub] = await conn.query('SELECT id FROM sub_words WHERE uuid = ?', [subUuid]);
+        if (existingSub.length > 0) {
+          await conn.query(
+            'UPDATE sub_words SET word_id = ?, kanji = ?, hiragana = ?, english = ? WHERE id = ?',
+            [wordId, s.kanji, s.hiragana, s.english, existingSub[0].id]
+          );
+          subsUpdated++;
+        } else {
+          await conn.query(
+            'INSERT INTO sub_words (uuid, word_id, kanji, hiragana, english) VALUES (?, ?, ?, ?, ?)',
+            [subUuid, wordId, s.kanji, s.hiragana, s.english]
+          );
+          subsAdded++;
+        }
+      }
+    }
+    await conn.commit();
+    res.json({ wordsAdded, wordsUpdated, subsAdded, subsUpdated });
+  } catch (err) {
+    await conn.rollback();
+    res.status(500).json({ error: err.message });
+  } finally {
+    conn.release();
+  }
+});
+
 // GET single word with subs
 router.get('/words/:id', async (req, res) => {
   try {
@@ -54,19 +126,20 @@ router.post('/words', async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-    const [result] = await conn.query('INSERT INTO words (main_word) VALUES (?)', [main_word]);
+    const wordUuid = randomUUID();
+    const [result] = await conn.query('INSERT INTO words (uuid, main_word) VALUES (?, ?)', [wordUuid, main_word]);
     const wordId = result.insertId;
     for (const s of subs) {
       if (!s.kanji || !s.hiragana || !s.english) {
         throw new Error('Each sub word needs kanji, hiragana and english');
       }
       await conn.query(
-        'INSERT INTO sub_words (word_id, kanji, hiragana, english) VALUES (?, ?, ?, ?)',
-        [wordId, s.kanji, s.hiragana, s.english]
+        'INSERT INTO sub_words (uuid, word_id, kanji, hiragana, english) VALUES (?, ?, ?, ?, ?)',
+        [randomUUID(), wordId, s.kanji, s.hiragana, s.english]
       );
     }
     await conn.commit();
-    res.status(201).json({ id: wordId, main_word, subs });
+    res.status(201).json({ id: wordId, uuid: wordUuid, main_word, subs });
   } catch (err) {
     await conn.rollback();
     res.status(500).json({ error: err.message });
@@ -85,8 +158,8 @@ router.put('/words/:id', async (req, res) => {
     await conn.query('DELETE FROM sub_words WHERE word_id = ?', [req.params.id]);
     for (const s of subs) {
       await conn.query(
-        'INSERT INTO sub_words (word_id, kanji, hiragana, english) VALUES (?, ?, ?, ?)',
-        [req.params.id, s.kanji, s.hiragana, s.english]
+        'INSERT INTO sub_words (uuid, word_id, kanji, hiragana, english) VALUES (?, ?, ?, ?, ?)',
+        [randomUUID(), req.params.id, s.kanji, s.hiragana, s.english]
       );
     }
     await conn.commit();

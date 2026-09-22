@@ -8,6 +8,7 @@ const pool = require('./src/db');
     await pool.query(`
       CREATE TABLE words (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        uuid CHAR(36) NOT NULL UNIQUE,
         main_word VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -15,6 +16,7 @@ const pool = require('./src/db');
     await pool.query(`
       CREATE TABLE sub_words (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        uuid CHAR(36) NOT NULL UNIQUE,
         word_id INT NOT NULL,
         kanji VARCHAR(255) NOT NULL,
         hiragana VARCHAR(255) NOT NULL,
@@ -25,6 +27,7 @@ const pool = require('./src/db');
     await pool.query(`
       CREATE TABLE vocab2 (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        uuid CHAR(36) NOT NULL UNIQUE,
         jp VARCHAR(255) NOT NULL,
         en VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

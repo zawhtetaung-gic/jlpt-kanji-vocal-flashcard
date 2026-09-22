@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { getVocab2, deleteVocab2 } from "../api";
+import { getVocab2, deleteVocab2, exportVocab2, importVocab2 } from "../api";
+import ImportExport from "./ImportExport";
 
 const PAGE_SIZE = 10;
 
@@ -25,9 +26,26 @@ export default function Vocab2List({ refreshKey }) {
 
   const startNum = (page - 1) * PAGE_SIZE;
 
+  const reload = () => {
+    setPage(1);
+    getVocab2(1, PAGE_SIZE).then(setData).catch(() => {});
+  };
+
   return (
     <div className="card">
       <h2>Vocab List ({data.total})</h2>
+      <ImportExport
+        label="Vocab"
+        filename="jlpt-vocab.json"
+        onExport={exportVocab2}
+        onImport={async (parsed) => {
+          const vocab = Array.isArray(parsed) ? parsed : parsed.vocab;
+          if (!Array.isArray(vocab)) throw new Error("Invalid file: expected a vocab array");
+          const r = await importVocab2(vocab);
+          return `Added ${r.added}, updated ${r.updated}.`;
+        }}
+        onImported={reload}
+      />
       {loading && <p>Loading...</p>}
       {!loading && data.words.length === 0 && <p>No vocab yet. Add some above.</p>}
       <ul className="list">
