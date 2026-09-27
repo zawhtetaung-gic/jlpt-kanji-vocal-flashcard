@@ -41,6 +41,12 @@ export default function Flashcard() {
 
   const card = cards[index];
 
+  const backCols = [
+    { key: 'kanji', cls: 'fc-col-kanji' },
+    ...(showHiragana ? [{ key: 'hiragana', cls: 'fc-col-hiragana' }] : []),
+    ...(showEnglish ? [{ key: 'english', cls: 'fc-col-english' }] : [])
+  ];
+
   return (
     <div className="card">
       <h2>Flashcards</h2>
@@ -90,17 +96,18 @@ export default function Flashcard() {
               </div>
               <div className="fc-face fc-back">
                 <div className="fc-top">{index + 1} / {cards.length}</div>
-                <div className="fc-back-list">
+                <div
+                  className="fc-back-list"
+                  style={{ gridTemplateColumns: `repeat(${backCols.length}, auto)` }}
+                >
                   {(card.subs || []).map((s, i) => (
-                    <div className="fc-sub" key={i}>
-                      <span className="fc-sub-kanji">{s.kanji}</span>
-                      {showHiragana && (
-                        <span className="fc-sub-hiragana">{s.hiragana}</span>
-                      )}
-                      {showEnglish && (
-                        <span className="fc-sub-english">{s.english}</span>
-                      )}
-                    </div>
+                    <React.Fragment key={i}>
+                      {backCols.map((c) => (
+                        <span key={c.key} className={c.cls}>
+                          {s[c.key]}
+                        </span>
+                      ))}
+                    </React.Fragment>
                   ))}
                 </div>
               </div>
