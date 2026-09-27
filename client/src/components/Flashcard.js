@@ -50,35 +50,38 @@ export default function Flashcard() {
   return (
     <div className="card">
       <h2>Flashcards</h2>
-      <label className="toggle">
-        <input
-          type="checkbox"
-          checked={random}
-          onChange={(e) => setRandom(e.target.checked)}
-        />
-        Random order
-      </label>
+      <div className="fc-toolbar">
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={random}
+            onChange={(e) => setRandom(e.target.checked)}
+          />
+          Random order
+        </label>
 
-      <div className="fc-visibility">
-        <span>Back shows:</span>
-        <label className="toggle">
-          <input
-            type="checkbox"
-            checked={showHiragana}
-            onChange={(e) => setShowHiragana(e.target.checked)}
-          />
-          Hiragana
-        </label>
-        <label className="toggle">
-          <input
-            type="checkbox"
-            checked={showEnglish}
-            onChange={(e) => setShowEnglish(e.target.checked)}
-          />
-          English
-        </label>
+        <div className="fc-visibility">
+          <span>Back shows:</span>
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={showHiragana}
+              onChange={(e) => setShowHiragana(e.target.checked)}
+            />
+            Hiragana
+          </label>
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={showEnglish}
+              onChange={(e) => setShowEnglish(e.target.checked)}
+            />
+            English
+          </label>
+        </div>
+
+        <button onClick={load}>Reload</button>
       </div>
-      <button onClick={load}>Reload</button>
 
       {cards.length === 0 && <p>No words yet.</p>}
       {card && (

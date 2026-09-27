@@ -14,7 +14,6 @@ export default function App() {
 
   return (
     <div className="app">
-      <h1>JLPT Quiz</h1>
       <nav>
         <button className={tab === 'add' ? 'active' : ''} onClick={() => setTab('add')}>Kanji Words</button>
         <button className={tab === 'flashcard' ? 'active' : ''} onClick={() => setTab('flashcard')}>Kanji Cards</button>
