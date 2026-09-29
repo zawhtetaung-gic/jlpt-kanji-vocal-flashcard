@@ -184,10 +184,11 @@ router.delete('/words/:id', async (req, res) => {
 });
 
 // GET flashcards (optionally shuffled)
-// query: ?random=true
+// query: ?random=true&filter=all|today
 router.get('/flashcards', async (req, res) => {
   try {
-    const [words] = await pool.query('SELECT * FROM words');
+    const where = req.query.filter === 'today' ? ' WHERE DATE(created_at) = CURDATE()' : '';
+    const [words] = await pool.query('SELECT * FROM words' + where);
     for (const w of words) {
       const [subs] = await pool.query('SELECT * FROM sub_words WHERE word_id = ?', [w.id]);
       w.subs = subs;
@@ -206,7 +207,7 @@ router.get('/flashcards', async (req, res) => {
 
 // GET quiz questions (one per sub-word)
 // query: ?count=10&random=true
-// Each question: show kanji, user types hiragana + english
+// Each question: show kanji, pick hiragana + pick meaning (multiple choice)
 router.get('/quiz', async (req, res) => {
   try {
     const [words] = await pool.query('SELECT * FROM words');
@@ -223,6 +224,31 @@ router.get('/quiz', async (req, res) => {
         });
       }
     }
+
+    const shuffle = (arr) => {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+
+    const hiraganaPool = [...new Set(questions.map((q) => q.hiragana.trim()).filter(Boolean))];
+    const englishPool = [...new Set(questions.map((q) => q.english.trim()).filter(Boolean))];
+
+    // 1 correct + 3 random distractors from all added kanji words
+    const buildOptions = (pool, correct) => {
+      const value = correct.trim();
+      const others = shuffle(pool.filter((v) => v !== value));
+      return shuffle([value, ...others.slice(0, 3)]);
+    };
+
+    for (const q of questions) {
+      q.hiraganaOptions = buildOptions(hiraganaPool, q.hiragana);
+      q.englishOptions = buildOptions(englishPool, q.english);
+    }
+
     if (req.query.random === 'true') {
       for (let i = questions.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));

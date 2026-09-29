@@ -15,9 +15,11 @@ export const exportWords = () => axios.get(`${API}/words/export`).then((r) => r.
 export const importWords = (words) =>
   axios.post(`${API}/words/import`, { words }).then((r) => r.data);
 
-export const getFlashcards = (random) =>
+export const getFlashcards = (random, filter = 'all') =>
   axios
-    .get(`${API}/flashcards`, { params: { random: random ? "true" : "false" } })
+    .get(`${API}/flashcards`, {
+      params: { random: random ? 'true' : 'false', filter },
+    })
     .then((r) => r.data);
 
 export const getQuiz = (count, random) =>

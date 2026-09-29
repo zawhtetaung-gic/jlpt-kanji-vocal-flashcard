@@ -36,12 +36,19 @@ export default function Quiz() {
   }, []);
 
   const check = () => {
-    if (!hiragana.trim() || !english.trim()) return;
+    if (!hiragana || !english) return;
     const q = questions[current];
     const hOk = hiragana.trim() === q.hiragana.trim();
-    const eOk = english.trim().toLowerCase() === q.english.trim().toLowerCase();
+    const eOk = english.trim() === q.english.trim();
     if (hOk && eOk) setScore((s) => s + 1);
     setChecked(true);
+  };
+
+  const optionClass = (opt, correct, picked) => {
+    if (!checked) return picked === opt ? 'option selected' : 'option';
+    if (opt.trim() === correct.trim()) return 'option correct';
+    if (picked === opt) return 'option wrong';
+    return 'option';
   };
 
   const next = () => {
@@ -92,23 +99,40 @@ export default function Quiz() {
             <span className="kanji">{q.kanji}</span>
           </div>
 
-          <div className="type-inputs">
-            <input
-              placeholder="Type hiragana"
-              value={hiragana}
-              onChange={(e) => setHiragana(e.target.value)}
-              disabled={checked}
-            />
-            <input
-              placeholder="Type english"
-              value={english}
-              onChange={(e) => setEnglish(e.target.value)}
-              disabled={checked}
-            />
+          <div className="quiz-section">
+            <div className="quiz-label">ひらがな</div>
+            <div className="options">
+              {(q.hiraganaOptions || []).map((opt) => (
+                <button
+                  key={opt}
+                  className={optionClass(opt, q.hiragana, hiragana)}
+                  onClick={() => setHiragana(opt)}
+                  disabled={checked}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="quiz-section">
+            <div className="quiz-label">Meaning</div>
+            <div className="options">
+              {(q.englishOptions || []).map((opt) => (
+                <button
+                  key={opt}
+                  className={optionClass(opt, q.english, english)}
+                  onClick={() => setEnglish(opt)}
+                  disabled={checked}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
           </div>
 
           {!checked ? (
-            <button className="next" onClick={check} disabled={!hiragana.trim() || !english.trim()}>
+            <button className="next" onClick={check} disabled={!hiragana || !english}>
               Check
             </button>
           ) : (
@@ -116,8 +140,8 @@ export default function Quiz() {
               <div className={hiragana.trim() === q.hiragana.trim() ? 'ok' : 'no'}>
                 ひらがな: {hiragana} {hiragana.trim() === q.hiragana.trim() ? '✓' : `✗ (${q.hiragana})`}
               </div>
-              <div className={english.trim().toLowerCase() === q.english.trim().toLowerCase() ? 'ok' : 'no'}>
-                English: {english} {english.trim().toLowerCase() === q.english.trim().toLowerCase() ? '✓' : `✗ (${q.english})`}
+              <div className={english.trim() === q.english.trim() ? 'ok' : 'no'}>
+                Meaning: {english} {english.trim() === q.english.trim() ? '✓' : `✗ (${q.english})`}
               </div>
               <button className="next" onClick={next}>
                 {current + 1 >= questions.length ? 'See results' : 'Next'}

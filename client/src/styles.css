@@ -186,13 +186,15 @@ label { display: block; font-weight: 600; margin-bottom: 4px; }
 .q-word .kanji { font-size: 40px; font-weight: bold; display: block; }
 .q-word .q-main { font-size: 18px; color: #888; display: block; margin-bottom: 4px; }
 
-.type-inputs { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.quiz-section { margin: 16px 0; }
+.quiz-label { font-weight: 600; color: #555; margin-bottom: 8px; }
 .feedback { margin-top: 8px; }
 .feedback .ok { color: #2b8a3e; }
 .feedback .no { color: #e03131; }
 
 .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .option { background: #f1f3f5; color: #222; padding: 14px; }
+.option.selected { background: #4a69bd; color: #fff; }
 .option.correct { background: #2b8a3e; color: #fff; }
 .option.wrong { background: #e03131; color: #fff; }
 .next { margin-top: 16px; width: 100%; background: #4a69bd; }

@@ -3,6 +3,7 @@ import { getFlashcards } from '../api';
 
 export default function Flashcard() {
   const [random, setRandom] = useState(true);
+  const [filter, setFilter] = useState('all');
   const [showHiragana, setShowHiragana] = useState(true);
   const [showEnglish, setShowEnglish] = useState(true);
   const [cards, setCards] = useState([]);
@@ -11,8 +12,10 @@ export default function Flashcard() {
   const [direction, setDirection] = useState('next');
   const [slideKey, setSlideKey] = useState(0);
 
-  const load = async () => {
-    const data = await getFlashcards(random);
+  const load = async (overrides = {}) => {
+    const r = overrides.random ?? random;
+    const f = overrides.filter ?? filter;
+    const data = await getFlashcards(r, f);
     setCards(data);
     setIndex(0);
     setFlipped(false);
@@ -24,6 +27,11 @@ export default function Flashcard() {
     load();
     // eslint-disable-next-line
   }, []);
+
+  const changeFilter = (value) => {
+    setFilter(value);
+    load({ filter: value });
+  };
 
   const go = (dir) => {
     setFlipped(false);
@@ -60,6 +68,14 @@ export default function Flashcard() {
           Random order
         </label>
 
+        <label className="toggle">
+          Show:
+          <select value={filter} onChange={(e) => changeFilter(e.target.value)}>
+            <option value="all">All</option>
+            <option value="today">Today</option>
+          </select>
+        </label>
+
         <div className="fc-visibility">
           <span>Back shows:</span>
           <label className="toggle">
@@ -83,7 +99,9 @@ export default function Flashcard() {
         <button onClick={load}>Reload</button>
       </div>
 
-      {cards.length === 0 && <p>No words yet.</p>}
+      {cards.length === 0 && (
+        <p>{filter === 'today' ? 'No words added today.' : 'No words yet.'}</p>
+      )}
       {card && (
         <div className="fc-stage">
           <div
